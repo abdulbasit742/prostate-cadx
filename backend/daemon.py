@@ -4,6 +4,8 @@ import time
 import subprocess
 import json
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from datetime import datetime
 from lib.db import db
 from lib.logging_setup import logger

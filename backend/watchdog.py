@@ -2,6 +2,8 @@ import time
 import subprocess
 import sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from lib.db import db
 from lib.logging_setup import logger
 
