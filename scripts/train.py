@@ -112,13 +112,42 @@ def run_training_session(batch_size):
         raise e
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Prostate Cancer CADx Train Script")
+    parser.add_argument("--smoke", action="store_true", help="Run in smoke test mode")
+    parser.add_argument("--lr", type=float, help="Learning rate override")
+    parser.add_argument("--weight_decay", type=float, help="Weight decay override")
+    parser.add_argument("--backbone", type=str, help="Backbone model override")
+    parser.add_argument("--epochs", type=int, help="Epochs override")
+    args = parser.parse_args()
+
+    # Apply configuration overrides if specified
+    if args.lr is not None:
+        if "train" not in config.cfg: config.cfg["train"] = {}
+        config.cfg["train"]["lr"] = args.lr
+        logger.info(f"Overriding learning rate to {args.lr}")
+        
+    if args.weight_decay is not None:
+        if "train" not in config.cfg: config.cfg["train"] = {}
+        config.cfg["train"]["weight_decay"] = args.weight_decay
+        logger.info(f"Overriding weight decay to {args.weight_decay}")
+        
+    if args.backbone is not None:
+        if "model" not in config.cfg: config.cfg["model"] = {}
+        config.cfg["model"]["backbone"] = args.backbone
+        logger.info(f"Overriding model backbone to {args.backbone}")
+        
+    if args.epochs is not None:
+        if "train" not in config.cfg: config.cfg["train"] = {}
+        config.cfg["train"]["epochs"] = args.epochs
+        logger.info(f"Overriding epochs to {args.epochs}")
+
     # Auto-tuning batch size loop
     start_batch_size = config.get("train.batch_size", 128)
-    # Check if we should override for smoke mode
-    if len(sys.argv) > 1 and "--smoke" in sys.argv:
+    if args.smoke:
         logger.info("Running train.py in smoke mode with tiny batch size.")
         start_batch_size = 2
-        # Setup config overrides for smoke mode
+        if "train" not in config.cfg: config.cfg["train"] = {}
         config.cfg["train"]["epochs"] = 1
         
     batch_size = start_batch_size

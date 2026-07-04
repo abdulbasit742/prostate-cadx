@@ -128,17 +128,31 @@ class DaemonSupervisor:
                 blocked = [s for s in all_skills if s["status"] == "blocked"]
                 
                 if not pending and not blocked:
-                    # Enters IMPROVE MODE - active retraining loop
-                    db.log_event("INFO", "All skills completed. Enters IMPROVE MODE. Launching full training cycle to maximize GPU performance...")
+                    # Enters IMPROVE MODE - active AutoML retraining loop
+                    import random
+                    lrs = [0.0001, 0.0002, 0.0005, 0.00005]
+                    wds = [0.01, 0.005, 0.02, 0.05]
+                    backbones = ["resnet50", "efficientnet_b0"]
+                    
+                    lr = random.choice(lrs)
+                    wd = random.choice(wds)
+                    backbone = random.choice(backbones)
+                    
+                    db.log_event("INFO", f"All skills completed. Enters IMPROVE MODE. Launching AutoML sweep: backbone={backbone}, lr={lr}, weight_decay={wd}...")
                     try:
-                        # Run full training script to train model and evaluate metrics
+                        # Run training script with hyperparameter overrides
                         subprocess.run(
-                            [str(self.venv_python), "scripts/train.py"],
+                            [
+                                str(self.venv_python), "scripts/train.py",
+                                "--lr", str(lr),
+                                "--weight_decay", str(wd),
+                                "--backbone", backbone
+                            ],
                             check=True
                         )
-                        db.log_event("INFO", "Full training cycle completed successfully. Validation metrics logged.")
+                        db.log_event("INFO", f"AutoML training cycle complete: backbone={backbone}, lr={lr}, weight_decay={wd}.")
                     except Exception as e:
-                        db.log_event("ERROR", f"Retraining cycle failed: {e}")
+                        db.log_event("ERROR", f"AutoML training cycle failed: {e}")
                     
                     time.sleep(30)
                 else:
