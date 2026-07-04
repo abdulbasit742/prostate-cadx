@@ -1,0 +1,47 @@
+# Prostate Cancer CADx Gleason Grading Configuration
+
+# Environment configuration
+env:
+  proxy_url: "http://172.30.10.10:3128"
+  no_proxy: "localhost,127.0.0.1"
+  use_proxy: false # Set to true if proxy is required, we detected direct works
+
+# Data directories and files
+data:
+  root_dir: "storage/data"
+  panda_dir: "storage/data/panda"
+  tcga_dir: "storage/data/tcga"
+  manifest_path: "storage/manifest.csv"
+  split_manifest_path: "storage/manifest_split.csv"
+  tile_size: 256
+  overlap: 0
+  min_tissue_ratio: 0.3
+  stain_normalization: "macenko" # Options: macenko, reinhard, none
+  magnification: 10.0 # Slide magnification for tiling
+
+# Model hyper-parameters
+model:
+  backbone: "resnet50" # Options: resnet50, efficientnet_b0
+  pretrained: true
+  num_classes: 6 # ISUP grades 0 to 5
+  tile_classes: 4 # Gleason patterns: 0 (benign), 3, 4, 5
+  aggregation: "attention" # Options: attention, mean, max
+  checkpoint_dir: "storage/checkpoints"
+
+# Training configuration
+train:
+  epochs: 10
+  batch_size: 512 # Saturation size for RTX A6000 (48GB VRAM) to use 95% GPU
+  lr: 0.0002
+  weight_decay: 0.01
+  warmup_epochs: 1
+  amp: true
+  cudnn_benchmark: true
+  channels_last: true
+  num_workers: 8
+  early_stopping_patience: 3
+
+# LLM config
+llm:
+  endpoint: "http://127.0.0.1:11434"
+  model_name: "qwen2.5:7b"
