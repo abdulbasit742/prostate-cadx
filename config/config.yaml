@@ -38,7 +38,7 @@ train:
   amp: true
   cudnn_benchmark: true
   channels_last: true
-  num_workers: 8
+  num_workers: 0
   early_stopping_patience: 3
 
 # LLM config
