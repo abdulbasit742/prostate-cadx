@@ -128,9 +128,18 @@ class DaemonSupervisor:
                 blocked = [s for s in all_skills if s["status"] == "blocked"]
                 
                 if not pending and not blocked:
-                    # Enters IMPROVE MODE
-                    db.log_event("INFO", "All skills completed. Enters IMPROVE MODE (hyperparameter sweeps, retraining)...")
-                    # Enact hyperparameter adjustment
+                    # Enters IMPROVE MODE - active retraining loop
+                    db.log_event("INFO", "All skills completed. Enters IMPROVE MODE. Launching full training cycle to maximize GPU performance...")
+                    try:
+                        # Run full training script to train model and evaluate metrics
+                        subprocess.run(
+                            [str(self.venv_python), "scripts/train.py"],
+                            check=True
+                        )
+                        db.log_event("INFO", "Full training cycle completed successfully. Validation metrics logged.")
+                    except Exception as e:
+                        db.log_event("ERROR", f"Retraining cycle failed: {e}")
+                    
                     time.sleep(30)
                 else:
                     # Some skills blocked, or waiting for dependencies
