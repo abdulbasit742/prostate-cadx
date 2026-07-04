@@ -84,7 +84,7 @@ def main():
     logger.info("Generating high-fidelity synthetic fallback dataset...")
     db.log_event("INFO", "Generating synthetic fallback dataset (no Kaggle keys or API failed).")
     
-    image_ids = [f"synthetic_slide_{i}" for i in range(12)]
+    image_ids = [f"synthetic_slide_{i}" for i in range(200)]
     records = []
     
     for i, img_id in enumerate(image_ids):
