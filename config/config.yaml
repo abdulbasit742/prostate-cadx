@@ -16,7 +16,7 @@ data:
   tile_size: 256
   overlap: 0
   min_tissue_ratio: 0.3
-  stain_normalization: "macenko" # Options: macenko, reinhard, none
+  stain_normalization: "none" # Options: macenko, reinhard, none
   magnification: 10.0 # Slide magnification for tiling
 
 # Model hyper-parameters
