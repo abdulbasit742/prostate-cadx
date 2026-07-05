@@ -30,7 +30,7 @@ def get_class_weights(df, label_col="tile_label", num_classes=4):
             weights.append(1.0)
     return weights
 
-def run_training_session(batch_size):
+def run_training_session(batch_size, resume_checkpoint=None):
     manifest_path = Path(config.get("data.manifest_path", "storage/manifest.csv"))
     if not manifest_path.exists():
         logger.error("Tile manifest not found. Run tile_wsi.py first.")
@@ -57,6 +57,15 @@ def run_training_session(batch_size):
     
     train_df = df[df["slide_id"].isin(train_slides["slide_id"])]
     val_df = df[df["slide_id"].isin(val_slides["slide_id"])]
+    
+    # Log the split sizes per grade
+    logger.info("Stratified split sizes per ISUP grade:")
+    for grade in sorted(slides["slide_isup"].unique()):
+        t_slides = len(train_slides[train_slides["slide_isup"] == grade])
+        v_slides = len(val_slides[val_slides["slide_isup"] == grade])
+        t_tiles = len(train_df[train_df["slide_isup"] == grade])
+        v_tiles = len(val_df[val_df["slide_isup"] == grade])
+        logger.info(f"Grade {grade} | Train Slides: {t_slides}, Val Slides: {v_slides} | Train Tiles: {t_tiles}, Val Tiles: {v_tiles}")
     
     # Create dataset format
     train_data = [{"image": r["tile_path"], "label": r["tile_label"]} for _, r in train_df.iterrows()]
@@ -101,7 +110,8 @@ def run_training_session(batch_size):
         pretrained=True
     )
     
-    trainer = Trainer(model, train_loader, val_loader, class_weights=class_weights)
+    trainer = Trainer(model, train_loader, val_loader, class_weights=class_weights,
+                      resume_checkpoint=resume_checkpoint)
     
     try:
         best_kappa = trainer.fit()
@@ -119,6 +129,7 @@ def main():
     parser.add_argument("--weight_decay", type=float, help="Weight decay override")
     parser.add_argument("--backbone", type=str, help="Backbone model override")
     parser.add_argument("--epochs", type=int, help="Epochs override")
+    parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
     args = parser.parse_args()
 
     # Apply configuration overrides if specified
@@ -156,7 +167,7 @@ def main():
     
     while batch_size >= 2:
         logger.info(f"Attempting training with batch_size={batch_size}...")
-        ok, kappa = run_training_session(batch_size)
+        ok, kappa = run_training_session(batch_size, resume_checkpoint=args.resume)
         if ok:
             success = True
             best_kappa = kappa

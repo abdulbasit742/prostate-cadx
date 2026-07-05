@@ -128,6 +128,26 @@ class DaemonSupervisor:
                 blocked = [s for s in all_skills if s["status"] == "blocked"]
                 
                 if not pending and not blocked:
+                    # Check if daemon is on HOLD (either HOLD file exists, or no manifest, or manifest contains synthetic data)
+                    hold_active = Path("storage/HOLD").exists()
+                    manifest_path = Path("storage/manifest.csv")
+                    if manifest_path.exists():
+                        try:
+                            with open(manifest_path, "r") as mf:
+                                content = mf.read(1000)
+                                if "synthetic" in content:
+                                    hold_active = True
+                        except Exception:
+                            pass
+                    else:
+                        hold_active = True
+
+                    if hold_active:
+                        db.log_event("WARNING", "AutoML sweeps on HOLD: awaiting real PANDA dataset. Synthetic sweeps paused.")
+                        logger.warning("AutoML sweeps on HOLD: awaiting real PANDA dataset.")
+                        time.sleep(30)
+                        continue
+
                     # Enters IMPROVE MODE - active AutoML retraining loop
                     import random
                     lrs = [0.0001, 0.0002, 0.0005, 0.00005]
@@ -140,6 +160,20 @@ class DaemonSupervisor:
                     
                     db.log_event("INFO", f"All skills completed. Enters IMPROVE MODE. Launching AutoML sweep: backbone={backbone}, lr={lr}, weight_decay={wd}...")
                     try:
+                        # Detect latest checkpoint for auto-resume after PC restart
+                        checkpoint_dir = Path("storage/checkpoints")
+                        resume_args = []
+                        if checkpoint_dir.exists():
+                            checkpoints = sorted(
+                                [f for f in checkpoint_dir.glob("checkpoint_epoch_*.pt")],
+                                key=lambda p: int(p.stem.split("_")[-1]),
+                                reverse=True
+                            )
+                            if checkpoints:
+                                latest_ckpt = checkpoints[0]
+                                resume_args = ["--resume", str(latest_ckpt)]
+                                db.log_event("INFO", f"Auto-resume from checkpoint: {latest_ckpt.name}")
+
                         # Run training script with hyperparameter overrides
                         subprocess.run(
                             [
@@ -147,10 +181,38 @@ class DaemonSupervisor:
                                 "--lr", str(lr),
                                 "--weight_decay", str(wd),
                                 "--backbone", backbone
-                            ],
+                            ] + resume_args,
                             check=True
                         )
                         db.log_event("INFO", f"AutoML training cycle complete: backbone={backbone}, lr={lr}, weight_decay={wd}.")
+
+                        # ── Post-training pipeline: update results, figures, paper ──
+                        for post_skill in [
+                            ("skills/skill_101_results_writer.py",  "results_writer"),
+                            ("skills/skill_102_figure_generator.py", "figure_generator"),
+                            ("skills/skill_104_paper_autofill.py",   "paper_autofill"),
+                        ]:
+                            skill_file, skill_name = post_skill
+                            try:
+                                subprocess.run(
+                                    [str(self.venv_python), skill_file],
+                                    check=True, timeout=120
+                                )
+                                db.log_event("INFO", f"Post-training skill OK: {skill_name}")
+                            except Exception as post_e:
+                                db.log_event("WARNING", f"Post-training skill failed ({skill_name}): {post_e}")
+
+                        # ── Auto-commit updated docs ──
+                        try:
+                            subprocess.run(["git", "add", "docs/", "skills/"], check=False)
+                            subprocess.run(
+                                ["git", "commit", "-m",
+                                 f"docs(auto): update results & paper after sweep backbone={backbone} kappa=[latest]"],
+                                check=False
+                            )
+                        except Exception:
+                            pass
+
                     except Exception as e:
                         db.log_event("ERROR", f"AutoML training cycle failed: {e}")
                     

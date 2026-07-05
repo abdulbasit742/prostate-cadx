@@ -11,7 +11,7 @@ from lib.db import db
 from lib.gpu import gpu_monitor
 
 class Trainer:
-    def __init__(self, model, train_loader, val_loader, class_weights=None):
+    def __init__(self, model, train_loader, val_loader, class_weights=None, resume_checkpoint=None):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
         self.train_loader = train_loader
@@ -46,6 +46,19 @@ class Trainer:
         self.best_kappa = -1.0
         self.early_stopping_patience = config.get("train.early_stopping_patience", 3)
         self.patience_counter = 0
+        self.start_epoch = 1
+
+        # Resume from checkpoint if provided
+        if resume_checkpoint and Path(resume_checkpoint).exists():
+            logger.info(f"Resuming training from checkpoint: {resume_checkpoint}")
+            ckpt = torch.load(resume_checkpoint, map_location=self.device)
+            self.model.load_state_dict(ckpt["model_state_dict"])
+            self.optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+            if "scaler_state_dict" in ckpt:
+                self.scaler.load_state_dict(ckpt["scaler_state_dict"])
+            self.start_epoch = ckpt.get("epoch", 1) + 1
+            self.best_kappa = ckpt.get("kappa", -1.0)
+            logger.info(f"Resumed: starting from epoch {self.start_epoch}, best kappa so far: {self.best_kappa:.4f}")
 
     def calculate_qwk(self, preds, targets):
         """
@@ -121,9 +134,9 @@ class Trainer:
     def fit(self):
         gpu_monitor.start()
         epochs = config.get("train.epochs", 10)
-        logger.info(f"Starting training for {epochs} epochs on {self.device}...")
+        logger.info(f"Starting training for {epochs} epochs on {self.device} (from epoch {self.start_epoch})...")
         
-        for epoch in range(1, epochs + 1):
+        for epoch in range(self.start_epoch, epochs + 1):
             start_time = time.time()
             
             try:
@@ -145,6 +158,7 @@ class Trainer:
                 "epoch": epoch,
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
+                "scaler_state_dict": self.scaler.state_dict(),
                 "kappa": kappa,
                 "loss": val_loss
             }, checkpoint_path)
@@ -156,6 +170,37 @@ class Trainer:
                 epoch=epoch,
                 checkpoint_path=str(checkpoint_path)
             )
+            
+            # Sanity Gate after epoch 3
+            if epoch == 3:
+                import sys
+                import pandas as pd
+                if kappa <= 0.001:
+                    logger.error(f"SANITY GATE FAILED at epoch 3. Val QWK is {kappa:.4f} (<= 0.0). Stopping training to prevent wasteful GPU usage.")
+                    db.log_event("ERROR", f"Sanity Gate failed at epoch 3: Val QWK is {kappa:.4f} (<= 0.0). Stopping training.")
+                    
+                    diag_path = Path("logs/sanity_gate_fail.json")
+                    train_dist = pd.Series([item["label"] for item in self.train_loader.dataset.data_list]).value_counts().to_dict()
+                    val_dist = pd.Series([item["label"] for item in self.val_loader.dataset.data_list]).value_counts().to_dict()
+                    
+                    import json
+                    with open(diag_path, "w") as df_json:
+                        json.dump({
+                            "epoch": epoch,
+                            "val_qwk": kappa,
+                            "val_loss": val_loss,
+                            "train_loss": train_loss,
+                            "train_label_distribution": {str(k): int(v) for k, v in train_dist.items()},
+                            "val_label_distribution": {str(k): int(v) for k, v in val_dist.items()},
+                            "message": "Sanity gate failed: validation QWK (Kappa) was 0.0 after 3 epochs. Gleason signal training failed."
+                        }, df_json, indent=4)
+                        
+                    logger.info(f"Diagnostic dump saved to {diag_path}")
+                    gpu_monitor.stop()
+                    sys.exit(1)
+                else:
+                    logger.info(f"SANITY GATE PASSED: validation QWK is {kappa:.4f} (> 0). Continuing training.")
+                    db.log_event("INFO", f"Sanity Gate passed: validation QWK is {kappa:.4f} (> 0).")
             
             # Save best checkpoint
             if kappa > self.best_kappa:

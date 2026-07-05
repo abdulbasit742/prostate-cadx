@@ -81,6 +81,31 @@ class MacenkoNormalizer:
         img_norm = np.clip(img_norm.T, 0, 255).astype(np.uint8)
         return img_norm.reshape((h, w, c))
 
+    def normalize_fast(self, img: np.ndarray) -> np.ndarray:
+        """
+        Stain normalization using cached reference matrices to avoid SVD overhead.
+        """
+        img_np = np.array(img).astype(np.float64)
+        h, w, c = img_np.shape
+        img_vec = img_np.reshape((-1, 3))
+
+        # Optical density (OD)
+        OD = -np.log((img_vec + 1.0) / self.Io)
+        
+        # Project OD directly using reference HE matrix
+        C = np.linalg.lstsq(self.HERef, OD.T, rcond=None)[0]
+        
+        # Scale concentrations by reference maximums
+        maxC = np.percentile(C, 99.0, axis=1)
+        maxC = np.clip(maxC, 1e-6, None)
+        C = (C.T / maxC).T
+        C = (C.T * self.maxCRef).T
+        
+        # Reconstruct image
+        img_norm = self.Io * np.exp(-np.dot(self.HERef, C))
+        img_norm = np.clip(img_norm.T, 0, 255).astype(np.uint8)
+        return img_norm.reshape((h, w, c))
+
 
 class WSITiler:
     def __init__(self, tile_size=256, min_tissue_ratio=0.3):
@@ -174,17 +199,29 @@ class GleasonDataset(Dataset):
         self.stain_norm = MacenkoNormalizer()
         self.data_list = []
         
-        logger.info(f"Preloading {len(data_list)} tiles into system RAM...")
+        logger.info(f"Preloading {len(data_list)} tiles into system RAM (stain_norm={normalize_stain})...")
         for item in data_list:
             img = item["image"]
+            label = item["label"]
             if isinstance(img, (str, Path)):
                 try:
                     img_np = np.array(Image.open(str(img)).convert("RGB"))
-                    self.data_list.append({"image": img_np, "label": item["label"]})
+                    if self.normalize_stain:
+                        try:
+                            img_np = self.stain_norm.normalize_fast(img_np)
+                        except Exception as e:
+                            logger.warning(f"Normalization failed: {e}")
+                    self.data_list.append({"image": img_np, "label": label})
                 except Exception as e:
                     logger.warning(f"Failed to preload tile {img}: {e}")
             else:
-                self.data_list.append(item)
+                img_np = img
+                if self.normalize_stain:
+                    try:
+                        img_np = self.stain_norm.normalize_fast(img_np)
+                    except Exception:
+                        pass
+                self.data_list.append({"image": img_np, "label": label})
         logger.info(f"Preloaded {len(self.data_list)} tiles successfully.")
 
     def __len__(self):
@@ -194,12 +231,6 @@ class GleasonDataset(Dataset):
         item = self.data_list[idx]
         img = item["image"]
             
-        if self.normalize_stain:
-            try:
-                img = self.stain_norm.normalize(img)
-            except Exception:
-                pass
-                
         if self.transform:
             augmented = self.transform(image=img)
             img = augmented["image"]
