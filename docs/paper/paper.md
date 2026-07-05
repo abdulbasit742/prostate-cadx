@@ -181,9 +181,10 @@ To test the model under domain shift, we evaluated the best SICAPv2 checkpoint o
 
 | Evaluated Dataset | Stain Correction | Volatile GPU Util | Val QWK (Mean ± SD) |
 |-------------------|------------------|-------------------|---------------------|
-| Internal Validation (SICAPv2) | None | 100% | 0.8752 ± 0.0033 |
-| Simulated Domain Shift (TCGA-PRAD Style) | None | 100% | 0.5423 ± 0.0065 |
-| Simulated Domain Shift (TCGA-PRAD Style) | Fast Macenko | 100% | **0.8422 ± 0.0074** |
+| Internal Validation (SICAPv2) | None | 100% | 0.9053 ± 0.0189 |
+| Simulated Domain Shift (TCGA-Style) | None | 100% | 0.7211 |
+| Simulated Domain Shift (TCGA-Style) | Calibrated Macenko | 100% | **0.7416** |
+| Real TCGA-PRAD Cohort (External) | None | 100% | **-0.0082** |
 
 ### 6.7 Loss Function Ablation Study
 
@@ -191,9 +192,9 @@ We trained and evaluated the ResNet50-AttentionMIL model with three loss variant
 
 | Loss Function | Val QWK (Mean ± SD) | Mean Absolute Error (MAE) (Mean ± SD) | Per-Grade F1 (Benign / G3 / G4 / G5) |
 |---------------|---------------------|---------------------------------------|--------------------------------------|
-| Cross-Entropy (Baseline) | 0.8803 ± 0.0037 | 0.163 ± 0.002 | 0.89 / 0.84 / 0.92 / 0.81 |
-| CORAL (Ordinal Loss) | 0.8900 ± 0.0011 | 0.125 ± 0.002 | 0.90 / 0.85 / 0.93 / 0.82 |
-| **Soft-QWK Loss (Proposed)** | **0.8989 ± 0.0024** | **0.110 ± 0.003** | **0.91 / 0.86 / 0.94 / 0.83** |
+| Cross-Entropy (Baseline) | 0.7278 ± 0.0675 | 0.3546 ± 0.0846 | 0.88 / 0.62 / 0.67 / 0.34 |
+| **CORAL (Ordinal Loss)** | **0.7458 ± 0.0693** | **0.3462 ± 0.0801** | **0.87 / 0.60 / 0.66 / 0.57** |
+| Soft-QWK Loss | 0.7184 ± 0.0560 | 0.3754 ± 0.0648 | 0.84 / 0.59 / 0.66 / 0.34 |
 
 ## 7. Discussion & Limitations
 

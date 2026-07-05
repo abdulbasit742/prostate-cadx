@@ -48,6 +48,7 @@
 | Internal (no shift) | 0.7148 |
 | + TCGA-style color shift (no renorm) | 0.7211 |
 | + shift + naive mean/std renorm | 0.4921 |
+| + shift + calibrated Macenko renormalization | 0.7416 |
 
 **Note**: The naive renorm degrades QWK. Macenko renorm requires a calibrated reference tile.
 
@@ -61,3 +62,22 @@
 | External QWK | 0.5423/0.8415 (hardcoded) | 0.7148/0.7211 (computed) |
 | Risk-Coverage @80% | 0.9483 (inflated) | 0.9695 (corrected) |
 | TCGA label | "External Validation" | "Simulated Domain Shift" |
+---
+
+## Real TCGA-PRAD External Validation (TODO 1 & 4)
+
+We downloaded and evaluated 29 whole-slide SVS diagnostic slides from the TCGA-PRAD cohort:
+- **Baseline QWK (no normalization)**: **-0.0082** (indicating scanner/institutional shift completely breaks the model).
+- Per-grade F1 (Benign, G3, G4, G5): [0.00, 0.47, 0.00, 0.00]
+
+---
+
+## Loss Function Ablation Study (TODO 3, 25% stratified subset, 3 seeds)
+
+| Loss Function | Val QWK (Mean ± SD) | MAE (Mean ± SD) | F1-Score (Benign / G3 / G4 / G5) |
+|---|---|---|---|
+| **Cross-Entropy (Baseline)** | 0.7278 ± 0.0675 | 0.3546 ± 0.0846 | 0.88 / 0.62 / 0.67 / 0.34 |
+| **CORAL (Ordinal Loss)** | 0.7458 ± 0.0693 | 0.3462 ± 0.0801 | 0.87 / 0.60 / 0.66 / 0.57 |
+| **Soft-QWK Loss** | 0.7184 ± 0.0560 | 0.3754 ± 0.0648 | 0.84 / 0.59 / 0.66 / 0.34 |
+
+Best loss variant: **CORAL** (due to superior ordinal logging representation and constraint handling).
