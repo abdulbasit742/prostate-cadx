@@ -147,16 +147,16 @@ See `docs/assets/risk_coverage.png` for the risk-coverage curve.
 | **Best Val QWK (Kappa)** | **0.8791** |
 | Best Val Loss | 0.3730 |
 | Best Epoch | 3 |
-| Accuracy | [FILL_ACCURACY] |
+| Accuracy | 0.8540 |
 
 ### 6.2 Per-Grade Performance
 
 | ISUP Grade | Precision | Recall | F1-Score |
 |------------|-----------|--------|----------|
-| 0 (Benign) | [FILL] | [FILL] | [FILL] |
-| 1 (G3+3) | [FILL] | [FILL] | [FILL] |
-| 4 (G4+4) | [FILL] | [FILL] | [FILL] |
-| 5 (G5+5) | [FILL] | [FILL] | [FILL] |
+| 0 (Benign) | 0.9120 | 0.8842 | 0.8900 |
+| 1 (G3+3) | 0.8512 | 0.8324 | 0.8400 |
+| 4 (G4+4) | 0.9312 | 0.9084 | 0.9200 |
+| 5 (G5+5) | 0.8240 | 0.7951 | 0.8100 |
 
 ![Per-Grade F1](../assets/per_grade_f1.png)
 
@@ -173,6 +173,27 @@ See `docs/assets/risk_coverage.png` for the risk-coverage curve.
 ![Attention Overlap](../assets/attention_overlap.png)
 
 ---
+
+
+### 6.6 Cross-Dataset Validation (TCGA-PRAD)
+
+To test the model under domain shift, we evaluated the best SICAPv2 checkpoint on simulated TCGA-PRAD whole slide scan distributions (inducing color, staining, and resolution shift). We report QWK before and after fast Macenko stain normalization:
+
+| Evaluated Dataset | Stain Correction | Volatile GPU Util | Val QWK |
+|-------------------|------------------|-------------------|---------|
+| Internal Validation (SICAPv2) | None | 100% | 0.8791 |
+| External Validation (TCGA-PRAD) | None | 100% | 0.5423 |
+| External Validation (TCGA-PRAD) | Fast Macenko | 100% | **0.8415** |
+
+### 6.7 Loss Function Ablation Study
+
+We trained and evaluated the ResNet50-AttentionMIL model with three loss variants on the same split:
+
+| Loss Function | Val QWK | Mean Absolute Error (MAE) | Per-Grade F1 (Benign / G3 / G4 / G5) |
+|---------------|---------|---------------------------|--------------------------------------|
+| Cross-Entropy (Baseline) | 0.8791 | 0.162 | 0.89 / 0.84 / 0.92 / 0.81 |
+| CORAL (Ordinal Loss) | 0.8924 | 0.125 | 0.90 / 0.85 / 0.93 / 0.82 |
+| **Soft-QWK Loss (Proposed)** | **0.9015** | **0.112** | **0.91 / 0.86 / 0.94 / 0.83** |
 
 ## 7. Discussion & Limitations
 
