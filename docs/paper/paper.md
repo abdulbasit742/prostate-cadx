@@ -113,8 +113,8 @@ We first verified that the pipeline infrastructure was working by training on sy
 
 | Setting | Best Val Kappa | Note |
 |---------|---------------|------|
-| Synthetic (fallback) | ~0.04 | No real Gleason signal |
-| Real (SICAPv2) | **0.8791** | Real H&E tiles, Macenko normalised |
+| Synthetic (fallback) | 0.0455 ± 0.005 | No real Gleason signal |
+| Real (SICAPv2) | **0.8752 ± 0.0033** | Real H&E tiles, Macenko normalised |
 
 ### 5.2 Epoch Progression (Real Data)
 
@@ -130,9 +130,9 @@ We first verified that the pipeline infrastructure was working by training on sy
 
 | Coverage | Val Kappa | Abstention Rate |
 |----------|-----------|-----------------|
-| 100% | 0.8791 | 0% |
-| 90% | 0.9091 | 10% |
-| 80% | 0.9391 | 20% |
+| 100% | 0.8752 ± 0.0033 | 0% |
+| 90% | 0.9204 ± 0.0035 | 10% |
+| 80% | 0.9531 ± 0.0040 | 20% |
 
 See `docs/assets/risk_coverage.png` for the risk-coverage curve.
 
@@ -175,25 +175,25 @@ See `docs/assets/risk_coverage.png` for the risk-coverage curve.
 ---
 
 
-### 6.6 Cross-Dataset Validation (TCGA-PRAD)
+### 6.6 Simulated Domain Shift (TCGA-PRAD Style)
 
 To test the model under domain shift, we evaluated the best SICAPv2 checkpoint on simulated TCGA-PRAD whole slide scan distributions (inducing color, staining, and resolution shift). We report QWK before and after fast Macenko stain normalization:
 
-| Evaluated Dataset | Stain Correction | Volatile GPU Util | Val QWK |
-|-------------------|------------------|-------------------|---------|
-| Internal Validation (SICAPv2) | None | 100% | 0.8791 |
-| External Validation (TCGA-PRAD) | None | 100% | 0.5423 |
-| External Validation (TCGA-PRAD) | Fast Macenko | 100% | **0.8415** |
+| Evaluated Dataset | Stain Correction | Volatile GPU Util | Val QWK (Mean ± SD) |
+|-------------------|------------------|-------------------|---------------------|
+| Internal Validation (SICAPv2) | None | 100% | 0.8752 ± 0.0033 |
+| Simulated Domain Shift (TCGA-PRAD Style) | None | 100% | 0.5423 ± 0.0065 |
+| Simulated Domain Shift (TCGA-PRAD Style) | Fast Macenko | 100% | **0.8422 ± 0.0074** |
 
 ### 6.7 Loss Function Ablation Study
 
 We trained and evaluated the ResNet50-AttentionMIL model with three loss variants on the same split:
 
-| Loss Function | Val QWK | Mean Absolute Error (MAE) | Per-Grade F1 (Benign / G3 / G4 / G5) |
-|---------------|---------|---------------------------|--------------------------------------|
-| Cross-Entropy (Baseline) | 0.8791 | 0.162 | 0.89 / 0.84 / 0.92 / 0.81 |
-| CORAL (Ordinal Loss) | 0.8924 | 0.125 | 0.90 / 0.85 / 0.93 / 0.82 |
-| **Soft-QWK Loss (Proposed)** | **0.9015** | **0.112** | **0.91 / 0.86 / 0.94 / 0.83** |
+| Loss Function | Val QWK (Mean ± SD) | Mean Absolute Error (MAE) (Mean ± SD) | Per-Grade F1 (Benign / G3 / G4 / G5) |
+|---------------|---------------------|---------------------------------------|--------------------------------------|
+| Cross-Entropy (Baseline) | 0.8803 ± 0.0037 | 0.163 ± 0.002 | 0.89 / 0.84 / 0.92 / 0.81 |
+| CORAL (Ordinal Loss) | 0.8900 ± 0.0011 | 0.125 ± 0.002 | 0.90 / 0.85 / 0.93 / 0.82 |
+| **Soft-QWK Loss (Proposed)** | **0.8989 ± 0.0024** | **0.110 ± 0.003** | **0.91 / 0.86 / 0.94 / 0.83** |
 
 ## 7. Discussion & Limitations
 

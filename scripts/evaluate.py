@@ -25,7 +25,7 @@ def main():
         return
 
     df = pd.read_csv(manifest_path)
-    slides = df[["slide_id", "slide_isup"]].drop_duplicates()
+    slides = df.groupby("slide_id")["slide_isup"].max().reset_index()
     try:
         _, val_slides = train_test_split(
             slides, 

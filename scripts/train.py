@@ -39,7 +39,7 @@ def run_training_session(batch_size, resume_checkpoint=None):
     df = pd.read_csv(manifest_path)
     
     # 1. Stratified split on slide_id level (no patient leakage)
-    slides = df[["slide_id", "slide_isup"]].drop_duplicates()
+    slides = df.groupby("slide_id")["slide_isup"].max().reset_index()
     try:
         train_slides, val_slides = train_test_split(
             slides, 
