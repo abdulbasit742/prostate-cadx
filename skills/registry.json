@@ -834,27 +834,36 @@
     "name": "results_writer",
     "group": "K",
     "status": "pending",
-    "deps": ["eval_kappa", "confusion_matrix"]
+    "deps": [
+      "eval_kappa",
+      "confusion_matrix"
+    ]
   },
   {
     "id": 102,
     "name": "figure_generator",
     "group": "K",
     "status": "pending",
-    "deps": ["results_writer"]
+    "deps": [
+      "results_writer"
+    ]
   },
   {
     "id": 103,
     "name": "paper_scaffold",
     "group": "K",
     "status": "pending",
-    "deps": ["figure_generator"]
+    "deps": [
+      "figure_generator"
+    ]
   },
   {
     "id": 104,
     "name": "paper_autofill",
     "group": "K",
     "status": "pending",
-    "deps": ["paper_scaffold"]
+    "deps": [
+      "paper_scaffold"
+    ]
   }
 ]

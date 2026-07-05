@@ -120,7 +120,11 @@ skills = [
     {"id": 97, "name": "skill_registry", "group": "J", "status": "pending", "deps": []},
     {"id": 98, "name": "next_skill_picker", "group": "J", "status": "pending", "deps": []},
     {"id": 99, "name": "loop_runner", "group": "J", "status": "pending", "deps": []},
-    {"id": 100, "name": "progress_reporter", "group": "J", "status": "pending", "deps": []}
+    {"id": 100, "name": "progress_reporter", "group": "J", "status": "pending", "deps": []},
+    {"id": 101, "name": "results_writer", "group": "K", "status": "pending", "deps": ["eval_kappa", "confusion_matrix"]},
+    {"id": 102, "name": "figure_generator", "group": "K", "status": "pending", "deps": ["results_writer"]},
+    {"id": 103, "name": "paper_scaffold", "group": "K", "status": "pending", "deps": ["figure_generator"]},
+    {"id": 104, "name": "paper_autofill", "group": "K", "status": "pending", "deps": ["paper_scaffold"]}
 ]
 
 os.makedirs('C:\\Users\\absh5\\.gemini\\antigravity\\scratch\\prostate-cadx\\skills', exist_ok=True)

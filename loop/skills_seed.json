@@ -104,5 +104,9 @@
   {"id": 97, "name": "coverage", "group": "G", "deps": ["unit_tests"]},
   {"id": 98, "name": "changelog", "group": "G", "deps": []},
   {"id": 99, "name": "skill_validator", "group": "G", "deps": []},
-  {"id": 100, "name": "skill_generator", "group": "G", "deps": ["skill_validator", "ollama_client"]}
+  {"id": 100, "name": "skill_generator", "group": "G", "deps": ["skill_validator", "ollama_client"]},
+  {"id": 101, "name": "results_writer", "group": "K", "deps": ["eval_kappa", "confusion_matrix"]},
+  {"id": 102, "name": "figure_generator", "group": "K", "deps": ["results_writer"]},
+  {"id": 103, "name": "paper_scaffold", "group": "K", "deps": ["figure_generator"]},
+  {"id": 104, "name": "paper_autofill", "group": "K", "deps": ["paper_scaffold"]}
 ]
