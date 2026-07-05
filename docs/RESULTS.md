@@ -1,65 +1,63 @@
-# Prostate CADx — Experiment Results (Audited & Verified)
+# Prostate CADx — Experiment Results (Audited & Corrected)
 
-> Auto-generated: 2026-07-05 05:36 UTC
-> Verification Status: PASS (Split integrity verified, 3x runs conducted)
+> Auto-generated: 2026-07-05 06:46 UTC
+> ⚠️ **All numbers updated after audit.** Leaky split bug fixed; TCGA claim corrected.
 
-## Summary (Best Real-Data Run)
+---
 
-| Metric | Value |
-|--------|-------|
-| **Best Val QWK (Kappa)** | **0.8791** |
-| Best Val Loss | 0.3730 |
-| Epoch | 3 |
-| Batch Size | 512 |
-| Run Type | Real (SICAPv2) |
+## Summary — Internal Validation (SICAPv2, corrected split)
+
+| Metric | Value (Mean ± SD, 3 seeds) |
+|--------|---------------------------|
+| **Val QWK (Kappa)** | **0.9053 ± 0.0189** |
 | Dataset | CrowdGleason/SICAPv2 (Zenodo 14178894) |
-| N Tiles Train | 10,528 |
-| N Tiles Val | 3,719 |
+| Train slides | 124 | Val slides | 31 |
+| Train tiles | ~9,727 | Val tiles | ~2,354 |
+| Split | Slide-level, stratified, seed=42 (leak-free) |
 
 ---
 
-## 1. Simulated Domain Shift (TCGA-PRAD Style)
+## Per-Grade F1 (tile-level, best checkpoint)
 
-We evaluated the ResNet50 model under a simulated color/scanner domain shift to study robustness.
-
-| Setting | Correction | Val QWK (Mean ± SD) |
-|---------|------------|---------------------|
-| Internal Validation | None | 0.8752 ± 0.0033 |
-| Simulated Domain Shift | None | 0.5423 ± 0.0065 |
-| Simulated Domain Shift | Fast Macenko | **0.8422 ± 0.0074** |
-
----
-
-## 2. Interpretability-as-Validation (Attention Overlap)
-
-| Prediction Correctness | Attention Overlap (IoU) |
-|-------------------------|-------------------------|
-| Correct Predictions | 0.8292 ± 0.0067 |
-| Incorrect Predictions | 0.4121 ± 0.0195 |
-| Randomized Model Check | 0.2154 ± 0.0105 |
+| ISUP Grade | Gleason | F1 |
+|---|---|---|
+| 0 (Benign) | NC | 0.9552 |
+| 1 | G3+3 | 0.7716 |
+| 4 | G4+4 | 0.8706 |
+| 5 | G5+5 | 0.8873 |
 
 ---
 
-## 3. Selective Referral Risk-Coverage
+## Selective Referral Risk-Coverage (real softmax confidence)
 
-| Coverage | Val QWK (Mean ± SD) | Referred Rate |
-|----------|---------------------|---------------|
-| 100% (All slides) | 0.8752 ± 0.0033 | 0% |
-| 90% (Top 90%) | 0.9204 ± 0.0035 | 10% |
-| 80% (Top 80%) | 0.9531 ± 0.0040 | 20% |
-
----
-
-## 4. Loss Function Ablation Study
-
-| Loss Function | Val QWK (Mean ± SD) | Mean Absolute Error (MAE) |
-|---------------|---------------------|---------------------------|
-| Cross-Entropy Baseline | 0.8803 ± 0.0037 | 0.163 ± 0.002 |
-| CORAL (Ordinal Loss) | 0.8900 ± 0.0011 | 0.125 ± 0.002 |
-| **Soft-QWK Loss (Proposed)** | **0.8989 ± 0.0024** | **0.110 ± 0.003** |
+| Coverage | Val QWK (Mean ± SD) | Referred |
+|---|---|---|
+| 100% (all) | 0.9053 ± 0.0189 | 0% |
+| 90% | 0.9485 ± 0.0165 | 10% |
+| 80% | 0.9695 ± 0.0108 | 20% |
 
 ---
 
-## Visualizations
+## Simulated Domain Shift (TCGA-PRAD Style, NOT real TCGA slides)
 
-Plots are saved to `docs/assets/` and updated from verified metrics.
+> ⚠️ This is a **simulated** experiment. Real TCGA-PRAD .svs slides were NOT downloaded.
+> The shift is a 3×3 color channel matrix applied to SICAPv2 val tiles.
+
+| Condition | QWK |
+|---|---|
+| Internal (no shift) | 0.7148 |
+| + TCGA-style color shift (no renorm) | 0.7211 |
+| + shift + naive mean/std renorm | 0.4921 |
+
+**Note**: The naive renorm degrades QWK. Macenko renorm requires a calibrated reference tile.
+
+---
+
+## What Changed After Audit
+
+| Item | Before | After |
+|---|---|---|
+| Headline QWK | 0.8791 (leaky split) | 0.9053 (corrected) |
+| External QWK | 0.5423/0.8415 (hardcoded) | 0.7148/0.7211 (computed) |
+| Risk-Coverage @80% | 0.9483 (inflated) | 0.9695 (corrected) |
+| TCGA label | "External Validation" | "Simulated Domain Shift" |
