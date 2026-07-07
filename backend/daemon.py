@@ -150,29 +150,68 @@ class DaemonSupervisor:
 
                     # Enters IMPROVE MODE - active AutoML retraining loop
                     import random
+                    import json
                     lrs = [0.0001, 0.0002, 0.0005, 0.00005]
                     wds = [0.01, 0.005, 0.02, 0.05]
                     backbones = ["resnet50", "efficientnet_b0"]
                     
-                    lr = random.choice(lrs)
-                    wd = random.choice(wds)
-                    backbone = random.choice(backbones)
-                    
-                    db.log_event("INFO", f"All skills completed. Enters IMPROVE MODE. Launching AutoML sweep: backbone={backbone}, lr={lr}, weight_decay={wd}...")
-                    try:
-                        # Detect latest checkpoint for auto-resume after PC restart
-                        checkpoint_dir = Path("storage/checkpoints")
+                    sweep_file = Path("storage/current_sweep.json")
+                    is_resume = False
+                    lr, wd, backbone = None, None, None
+                    resume_args = []
+
+                    # 1. Check if there is an interrupted sweep we can resume
+                    if sweep_file.exists():
+                        try:
+                            with open(sweep_file, "r") as sf:
+                                current_sweep = json.load(sf)
+                            lr = current_sweep.get("lr")
+                            wd = current_sweep.get("weight_decay")
+                            backbone = current_sweep.get("backbone")
+                            
+                            checkpoint_dir = Path("storage/checkpoints")
+                            if checkpoint_dir.exists():
+                                patterns = [f"checkpoint_{backbone}_epoch_*.pt"]
+                                if backbone == "resnet50":
+                                    patterns.append("checkpoint_epoch_*.pt")
+                                
+                                checkpoints = []
+                                for pattern in patterns:
+                                    checkpoints.extend(checkpoint_dir.glob(pattern))
+                                
+                                checkpoints = sorted(
+                                    list(set(checkpoints)),
+                                    key=lambda p: int(p.stem.split("_")[-1]),
+                                    reverse=True
+                                )
+                                if checkpoints:
+                                    latest_ckpt = checkpoints[0]
+                                    latest_epoch = int(latest_ckpt.stem.split("_")[-1])
+                                    if latest_epoch < 10:
+                                        is_resume = True
+                                        resume_args = ["--resume", str(latest_ckpt)]
+                                        db.log_event("INFO", f"Auto-resuming interrupted AutoML sweep: backbone={backbone}, lr={lr}, weight_decay={wd} from {latest_ckpt.name}")
+                        except Exception as sweep_err:
+                            logger.warning(f"Failed to check/load interrupted sweep: {sweep_err}")
+
+                    # 2. If no interrupted sweep, start a brand new random sweep
+                    if not is_resume:
+                        lr = random.choice(lrs)
+                        wd = random.choice(wds)
+                        backbone = random.choice(backbones)
                         resume_args = []
-                        if checkpoint_dir.exists():
-                            checkpoints = sorted(
-                                [f for f in checkpoint_dir.glob("checkpoint_epoch_*.pt")],
-                                key=lambda p: int(p.stem.split("_")[-1]),
-                                reverse=True
-                            )
-                            if checkpoints:
-                                latest_ckpt = checkpoints[0]
-                                resume_args = ["--resume", str(latest_ckpt)]
-                                db.log_event("INFO", f"Auto-resume from checkpoint: {latest_ckpt.name}")
+                        
+                        # Save the new sweep settings
+                        try:
+                            sweep_file.parent.mkdir(parents=True, exist_ok=True)
+                            with open(sweep_file, "w") as sf:
+                                json.dump({"backbone": backbone, "lr": lr, "weight_decay": wd}, sf)
+                        except Exception as sweep_err:
+                            logger.warning(f"Failed to save new sweep configurations: {sweep_err}")
+
+                        db.log_event("INFO", f"All skills completed. Enters IMPROVE MODE. Launching fresh AutoML sweep: backbone={backbone}, lr={lr}, weight_decay={wd}...")
+                    
+                    try:
 
                         # Run training script with hyperparameter overrides
                         subprocess.run(

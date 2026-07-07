@@ -39,3 +39,4 @@ This recreates the SQLite tables and seeds the 100 skills in a pending state.
 ### Loop Optimization & Troubleshooting
 
 - **Git Locks & `.gitignore`**: The autonomy daemon auto-commits changes after completing each skill via `git add .`. If virtual environment directories (such as `.venv/`) are not ignored, background git commands will scan thousands of dependency files, causing severe CPU spikes, repository locks (`index.lock`), or hanging the entire loop process. Ensure `.venv/` is explicitly added to `.gitignore`.
+- **AutoML Checkpoint Loading**: Checkpoints generated during AutoML sweeps are model-specific (e.g. resnet50 vs efficientnet_b0). The system uses backbone-specific checkpoint filenames (`checkpoint_{backbone}_epoch_{epoch}.pt`) and tracks current sweep state inside `storage/current_sweep.json` to prevent key mismatch errors when starting fresh sweeps or resuming interrupted runs.

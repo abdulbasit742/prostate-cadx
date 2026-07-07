@@ -275,7 +275,8 @@ class Trainer:
             logger.info(f"Epoch {epoch}/{epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Kappa: {kappa:.4f} | Time: {elapsed:.1f}s")
             
             # Log metrics to DB
-            checkpoint_path = self.checkpoint_dir / f"checkpoint_epoch_{epoch}.pt"
+            backbone = config.get("model.backbone", "resnet50")
+            checkpoint_path = self.checkpoint_dir / f"checkpoint_{backbone}_epoch_{epoch}.pt"
             torch.save({
                 "epoch": epoch,
                 "model_state_dict": self.model.state_dict(),
