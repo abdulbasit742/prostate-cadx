@@ -35,3 +35,7 @@ Remove-Item db/cadx.db
 .\venv\Scripts\python.exe scripts/wire.py
 ```
 This recreates the SQLite tables and seeds the 100 skills in a pending state.
+
+### Loop Optimization & Troubleshooting
+
+- **Git Locks & `.gitignore`**: The autonomy daemon auto-commits changes after completing each skill via `git add .`. If virtual environment directories (such as `.venv/`) are not ignored, background git commands will scan thousands of dependency files, causing severe CPU spikes, repository locks (`index.lock`), or hanging the entire loop process. Ensure `.venv/` is explicitly added to `.gitignore`.
