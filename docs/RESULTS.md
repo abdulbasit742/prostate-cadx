@@ -1,15 +1,15 @@
 # Prostate CADx — Experiment Results
 
-> Auto-generated: 2026-07-07 09:48 UTC
+> Auto-generated: 2026-07-07 17:36 UTC
 
 ## Summary (Best Real-Data Run)
 
 | Metric | Value |
 |--------|-------|
-| **Best Val QWK (Kappa)** | **0.8791** |
-| Best Val Loss | 0.3730 |
-| Epoch | 3 |
-| Batch Size | 512 |
+| **Best Val QWK (Kappa)** | **0.9086** |
+| Best Val Loss | 0.4149 |
+| Epoch | 6 |
+| Batch Size | 32 |
 | Run Type | Real (SICAPv2) |
 | Dataset | CrowdGleason/SICAPv2 (Zenodo 14178894) |
 | N Tiles Train | 10,528 |
@@ -118,6 +118,17 @@
 | 95 | 2026-07-07 07:39:34 | Real (SICAPv2) | 3 | 32 | -0.1494 | 1.4080 |
 | 96 | 2026-07-07 08:02:58 | Real (SICAPv2) | 3 | 32 | -0.1439 | 1.4060 |
 | 97 | 2026-07-07 09:40:21 | Real (SICAPv2) | 3 | 32 | -0.1365 | 1.4100 |
+| 98 | 2026-07-07 09:48:52 | Real (SICAPv2) | 4 | 32 | -0.1513 | 1.4088 |
+| 99 | 2026-07-07 11:39:39 | Real (SICAPv2) | 5 | 32 | -0.1580 | 1.4087 |
+| 100 | 2026-07-07 14:05:13 | Real (SICAPv2) | 1 | 32 | 0.7693 | 0.6433 |
+| 101 | 2026-07-07 16:18:34 | Real (SICAPv2) | 2 | 32 | 0.8332 | 0.5658 |
+| 102 | 2026-07-07 16:55:55 | Real (SICAPv2) | 3 | 32 | 0.8815 | 0.4890 |
+| 103 | 2026-07-07 17:02:03 | Real (SICAPv2) | 4 | 32 | 0.8602 | 0.5035 |
+| 104 | 2026-07-07 17:08:01 | Real (SICAPv2) | 5 | 32 | 0.8584 | 0.6418 |
+| 105 | 2026-07-07 17:14:14 | Real (SICAPv2) | 6 | 32 | 0.9086 | 0.4149 |
+| 106 | 2026-07-07 17:20:44 | Real (SICAPv2) | 7 | 32 | 0.8788 | 0.5676 |
+| 107 | 2026-07-07 17:28:42 | Real (SICAPv2) | 8 | 32 | 0.8910 | 0.6874 |
+| 108 | 2026-07-07 17:36:49 | Real (SICAPv2) | 9 | 32 | 0.8761 | 0.6056 |
 
 ---
 
@@ -125,9 +136,9 @@
 
 | Metric | Synthetic (Fallback) | Real (SICAPv2) |
 |--------|---------------------|----------------|
-| Best Val Kappa | 0.6269 | **0.8791** |
-| Mean Val Kappa | 0.0103 | 0.1462 |
-| N Experiments | 87 | 10 |
+| Best Val Kappa | 0.6269 | **0.9086** |
+| Mean Val Kappa | 0.0103 | 0.4536 |
+| N Experiments | 87 | 21 |
 
 ---
 
@@ -158,22 +169,3 @@
 
 ### Attention Map Overlap Score
 ![Attention Heatmap](assets/attention_overlap.png)
----
-
-## Real TCGA-PRAD External Validation (TODO 1 & 4)
-
-We downloaded and evaluated 29 whole-slide SVS diagnostic slides from the TCGA-PRAD cohort:
-- **Baseline QWK (no normalization)**: **-0.0082** (indicating scanner/institutional shift completely breaks the model).
-- Per-grade F1 (Benign, G3, G4, G5): [0.00, 0.47, 0.00, 0.00]
-
----
-
-## Loss Function Ablation Study (TODO 3, 25% stratified subset, 3 seeds)
-
-| Loss Function | Val QWK (Mean ± SD) | MAE (Mean ± SD) | F1-Score (Benign / G3 / G4 / G5) |
-|---|---|---|---|
-| **Cross-Entropy (Baseline)** | 0.7278 ± 0.0675 | 0.3546 ± 0.0846 | 0.88 / 0.62 / 0.67 / 0.34 |
-| **CORAL (Ordinal Loss)** | 0.7458 ± 0.0693 | 0.3462 ± 0.0801 | 0.87 / 0.60 / 0.66 / 0.57 |
-| **Soft-QWK Loss** | 0.7184 ± 0.0560 | 0.3754 ± 0.0648 | 0.84 / 0.59 / 0.66 / 0.34 |
-
-Best loss variant: **CORAL** (due to superior ordinal logging representation and constraint handling).

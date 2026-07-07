@@ -130,7 +130,7 @@ We first verified that the pipeline infrastructure was working by training on sy
 | 2 | 0.3452 | 0.5477 | 0.8482 |
 | 3 | 0.2262 | 0.3730 | **0.8791** |
 | 4 | [FILL_E4_TRAIN] | [FILL_E4_VAL] | -0.1513 |
-| 5 | [FILL_E5_TRAIN] | [FILL_E5_VAL] | [FILL_E5_KAPPA] |
+| 5 | [FILL_E5_TRAIN] | [FILL_E5_VAL] | -0.1580 |
 
 ### 5.3 Risk-Coverage Analysis
 
