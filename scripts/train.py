@@ -1,4 +1,5 @@
 import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
 import sys
 import pandas as pd
 import numpy as np
@@ -30,7 +31,7 @@ def get_class_weights(df, label_col="tile_label", num_classes=4):
             weights.append(1.0)
     return weights
 
-def run_training_session(batch_size, resume_checkpoint=None):
+def run_training_session(batch_size, resume_checkpoint=None, smoke=False):
     manifest_path = Path(config.get("data.manifest_path", "storage/manifest.csv"))
     if not manifest_path.exists():
         logger.error("Tile manifest not found. Run tile_wsi.py first.")
@@ -58,6 +59,10 @@ def run_training_session(batch_size, resume_checkpoint=None):
     train_df = df[df["slide_id"].isin(train_slides["slide_id"])]
     val_df = df[df["slide_id"].isin(val_slides["slide_id"])]
     
+    if smoke:
+        train_df = train_df.head(4)
+        val_df = val_df.head(4)
+    
     # Log the split sizes per grade
     logger.info("Stratified split sizes per ISUP grade:")
     for grade in sorted(slides["slide_isup"].unique()):
@@ -76,16 +81,16 @@ def run_training_session(batch_size, resume_checkpoint=None):
     # Enable Macenko stain normalization in dataset if configured
     stain_norm = config.get("data.stain_normalization", "macenko") == "macenko"
     
-    train_dataset = GleasonDataset(train_data, transform=train_transform, normalize_stain=stain_norm)
+    train_dataset = GleasonDataset(train_data, transform=train_transform, normalize_stain=stain_norm, return_dual_views=True)
     val_dataset = GleasonDataset(val_data, transform=val_transform, normalize_stain=stain_norm)
     
     # DataLoader configuration with pin_memory and prefetch
-    num_workers = config.get("train.num_workers", os.cpu_count() - 1)
+    num_workers = config.get("train.num_workers", 0)
     train_loader = DataLoader(
         train_dataset, 
         batch_size=batch_size, 
         shuffle=True, 
-        num_workers=max(1, num_workers), 
+        num_workers=num_workers, 
         pin_memory=True,
         prefetch_factor=4 if num_workers > 0 else None
     )
@@ -93,7 +98,7 @@ def run_training_session(batch_size, resume_checkpoint=None):
         val_dataset, 
         batch_size=batch_size, 
         shuffle=False, 
-        num_workers=max(1, num_workers), 
+        num_workers=num_workers, 
         pin_memory=True,
         prefetch_factor=4 if num_workers > 0 else None
     )
@@ -118,6 +123,12 @@ def run_training_session(batch_size, resume_checkpoint=None):
         return True, best_kappa
     except RuntimeError as e:
         if "out of memory" in str(e):
+            del trainer
+            del model
+            import gc
+            import torch
+            gc.collect()
+            torch.cuda.empty_cache()
             return False, None
         raise e
 
@@ -166,8 +177,12 @@ def main():
     best_kappa = 0.0
     
     while batch_size >= 2:
+        import gc
+        import torch
+        gc.collect()
+        torch.cuda.empty_cache()
         logger.info(f"Attempting training with batch_size={batch_size}...")
-        ok, kappa = run_training_session(batch_size, resume_checkpoint=args.resume)
+        ok, kappa = run_training_session(batch_size, resume_checkpoint=args.resume, smoke=args.smoke)
         if ok:
             success = True
             best_kappa = kappa

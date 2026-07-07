@@ -61,7 +61,14 @@ class ProstateCADxModel(nn.Module):
         # 4. Slide classifier
         self.slide_classifier = nn.Linear(self.feature_dim, num_classes)
 
-    def forward(self, x: torch.Tensor, return_attention=False):
+        # 5. Contrastive projection head (SimCLR style MLP)
+        self.contrastive_proj = nn.Sequential(
+            nn.Linear(self.feature_dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, 128)
+        )
+
+    def forward(self, x: torch.Tensor, return_attention=False, return_contrastive=False):
         # If input has shape (batch_size, num_tiles, channels, height, width)
         # we reshape it to batch_size * num_tiles to pass through backbone
         if x.dim() == 5:
@@ -87,6 +94,12 @@ class ProstateCADxModel(nn.Module):
                 
             slide_logits = self.slide_classifier(slide_features)
             
+            if return_contrastive:
+                proj = self.contrastive_proj(features_flat)
+                if return_attention:
+                    return slide_logits, tile_logits, attn_weights, proj
+                return slide_logits, tile_logits, proj
+
             if return_attention:
                 return slide_logits, tile_logits, attn_weights
             return slide_logits, tile_logits
@@ -95,4 +108,7 @@ class ProstateCADxModel(nn.Module):
             # Single image input (tile level)
             features = self.backbone(x) # (batch_size, feature_dim)
             tile_logits = self.tile_classifier(features)
+            if return_contrastive:
+                proj = self.contrastive_proj(features)
+                return tile_logits, proj
             return tile_logits

@@ -31,15 +31,17 @@ model:
 # Training configuration
 train:
   epochs: 10
-  batch_size: 512 # Saturation size for RTX A6000 (48GB VRAM) to use 95% GPU
-  lr: 0.0002
+  batch_size: 32
+  lr: 0.0003
   weight_decay: 0.01
   warmup_epochs: 1
   amp: true
-  cudnn_benchmark: true
-  channels_last: true
+  cudnn_benchmark: false
+  channels_last: false
   num_workers: 0
   early_stopping_patience: 3
+  contrastive_weight: 0.5
+  contrastive_temperature: 0.1
 
 # LLM config
 llm:

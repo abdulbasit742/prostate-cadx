@@ -1,0 +1,13 @@
+{
+  "directory": "C:\\Users\\absh5\\.gemini\\antigravity\\scratch\\prostate-cadx",
+  "type": "python",
+  "has_package_json": false,
+  "has_pyproject_toml": true,
+  "has_index_html": false,
+  "install_status": {
+    "code": -1,
+    "stdout": "",
+    "stderr": "Command '['C:\\\\Users\\\\absh5\\\\.gemini\\\\antigravity\\\\scratch\\\\prostate-cadx\\\\.venv\\\\Scripts\\\\pip.exe', 'install', '-e', '.']' timed out after 60 seconds"
+  },
+  "test_status": null
+}

@@ -92,8 +92,10 @@ class MacenkoNormalizer:
         # Optical density (OD)
         OD = -np.log((img_vec + 1.0) / self.Io)
         
-        # Project OD directly using reference HE matrix
-        C = np.linalg.lstsq(self.HERef, OD.T, rcond=None)[0]
+        # Project OD directly using reference HE matrix pseudo-inverse
+        if not hasattr(self, 'HERef_pinv'):
+            self.HERef_pinv = np.linalg.pinv(self.HERef)
+        C = np.dot(self.HERef_pinv, OD.T)
         
         # Scale concentrations by reference maximums
         maxC = np.percentile(C, 99.0, axis=1)
@@ -190,12 +192,13 @@ class WSITiler:
 
 
 class GleasonDataset(Dataset):
-    def __init__(self, data_list, transform=None, normalize_stain=False):
+    def __init__(self, data_list, transform=None, normalize_stain=False, return_dual_views=False):
         """
         data_list: list of dicts with {"image": np.ndarray or str, "label": int}
         """
         self.transform = transform
         self.normalize_stain = normalize_stain
+        self.return_dual_views = return_dual_views
         self.stain_norm = MacenkoNormalizer()
         self.data_list = []
         
@@ -230,7 +233,15 @@ class GleasonDataset(Dataset):
     def __getitem__(self, idx):
         item = self.data_list[idx]
         img = item["image"]
+        label = item["label"]
             
+        if self.return_dual_views and self.transform:
+            augmented_a = self.transform(image=img)
+            augmented_b = self.transform(image=img)
+            img_a = augmented_a["image"]
+            img_b = augmented_b["image"]
+            return img_a, img_b, torch.tensor(label, dtype=torch.long)
+
         if self.transform:
             augmented = self.transform(image=img)
             img = augmented["image"]
@@ -238,7 +249,6 @@ class GleasonDataset(Dataset):
             img = img.transpose(2, 0, 1) / 255.0 # CHW
             img = torch.tensor(img, dtype=torch.float32)
             
-        label = item["label"]
         return img, torch.tensor(label, dtype=torch.long)
 
 
