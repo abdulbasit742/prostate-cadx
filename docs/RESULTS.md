@@ -1,6 +1,6 @@
 # Prostate CADx — Experiment Results
 
-> Auto-generated: 2026-07-12 11:12 UTC
+> Auto-generated: 2026-07-12 11:51 UTC
 
 ## Summary (Best Real-Data Run)
 
@@ -385,6 +385,10 @@
 | 362 | 2026-07-12 10:58:52 | Real (SICAPv2) | 5 | 32 | 0.8796 | 0.4536 |
 | 363 | 2026-07-12 11:05:45 | Real (SICAPv2) | 6 | 32 | 0.8896 | 0.4668 |
 | 364 | 2026-07-12 11:12:07 | Real (SICAPv2) | 7 | 32 | 0.8754 | 0.4662 |
+| 365 | 2026-07-12 11:30:00 | Real (SICAPv2) | 1 | 32 | 0.8982 | 0.5205 |
+| 366 | 2026-07-12 11:37:03 | Real (SICAPv2) | 2 | 32 | 0.8659 | 0.6272 |
+| 367 | 2026-07-12 11:43:57 | Real (SICAPv2) | 3 | 32 | 0.8811 | 0.5765 |
+| 368 | 2026-07-12 11:51:11 | Real (SICAPv2) | 4 | 32 | 0.8779 | 0.5229 |
 
 ---
 
@@ -393,8 +397,8 @@
 | Metric | Synthetic (Fallback) | Real (SICAPv2) |
 |--------|---------------------|----------------|
 | Best Val Kappa | 0.6269 | **0.9234** |
-| Mean Val Kappa | 0.0103 | 0.8372 |
-| N Experiments | 87 | 277 |
+| Mean Val Kappa | 0.0103 | 0.8378 |
+| N Experiments | 87 | 281 |
 
 ---
 
