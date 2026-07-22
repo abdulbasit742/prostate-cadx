@@ -1,0 +1,33 @@
+﻿name: CI (self-hosted A6000)
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+
+jobs:
+  smoke:
+    runs-on: [self-hosted, gpu, a6000]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Show GPU
+        run: nvidia-smi
+      - name: Setup venv + deps
+        shell: powershell
+        run: |
+          if (-Not (Test-Path .\venv)) { python -m venv venv }
+          .\venv\Scripts\python -m pip install --upgrade pip
+          if (Test-Path requirements.txt) { .\venv\Scripts\python -m pip install -r requirements.txt }
+      - name: Run smoke tests
+        shell: powershell
+        run: |
+          if (Test-Path .\skills) {
+            $skills = Get-ChildItem -Path .\skills -Filter *.py -Recurse
+            foreach ($s in $skills) {
+              Write-Host "SMOKE: $($s.Name)"
+              .\venv\Scripts\python $s.FullName --smoke
+              if ($LASTEXITCODE -ne 0) { throw "Smoke failed: $($s.Name)" }
+            }
+          } else { Write-Host "No skills folder - skipping" }
