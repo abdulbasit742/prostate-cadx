@@ -15,13 +15,13 @@ jobs:
       - name: Show GPU
         run: nvidia-smi
       - name: Setup venv + deps
-        shell: pwsh
+        shell: powershell
         run: |
           if (-Not (Test-Path .\venv)) { python -m venv venv }
           .\venv\Scripts\python -m pip install --upgrade pip
           if (Test-Path requirements.txt) { .\venv\Scripts\python -m pip install -r requirements.txt }
       - name: Run smoke tests
-        shell: pwsh
+        shell: powershell
         run: |
           if (Test-Path .\skills) {
             $skills = Get-ChildItem -Path .\skills -Filter *.py -Recurse
